@@ -7,21 +7,25 @@
 
 import Foundation
 
-func RsaTest(nTimes:Int){
-    
-    let plainText: NSString = "This is a secret message. I'm Arzhna Lee. I'm listening a song that is Chloe of Grouplove."
+var plainText: NSString = "This is a secret message. I'm Arzhna Lee. I'm listening a song that is Battery of Metallica."
+let resourcePath = "usr/share/man/man1/Resources"
+
+func RsaTest(nTimes: Int){
+
     var encryptedData = NSData()
     var decryptedData = NSData()
+    var count = 0
 
-    //let resourcePath = "/Users/arzhna/Develop/swiftWorkspace/xmlParserTest/resources/"
-    let resourcePath = "/Users/arzhna/Develop/git/hi-roo/xmlParserTest/resources/"
     var path: NSString
-
+    var bundle = NSBundle.mainBundle()
+    
+    println("\(bundle)")
+    
     // load keys
-    path = NSBundle(path: resourcePath).pathForResource("pubkey", ofType: "data")
+    path = bundle.pathForResource("pubkey", ofType: "data", inDirectory: resourcePath)
     let publicKey = NSData(contentsOfFile: path)
     
-    path = NSBundle(path: resourcePath).pathForResource("privkey", ofType: "data")
+    path = bundle.pathForResource("privkey", ofType: "data", inDirectory: resourcePath)
     let privateKey = NSData(contentsOfFile: path)
     
     // generate AolRSA Instance
@@ -117,13 +121,12 @@ func RsaTest(nTimes:Int){
     println("Decrypted Text : \(decryptedText)\n\n")
 }
 
-func DesTest(nTimes:Int) {
+func DesTest(nTimes: Int) {
     
-    let plain:NSString = "This is a secret message. I'm Arzhna Lee. I'm listening a song that is Chloe of Grouplove."
     var decryptedText = ""
 
     println("== DES Test ==")
-    println("Plain Text : \(plain)")
+    println("Plain Text : \(plainText)")
     
     // generate AolDES Instance
     let des = AolDES()
@@ -138,15 +141,15 @@ func DesTest(nTimes:Int) {
         des.generateInitVector()
 
         // encrypt
-        let cipher = des.encrypt(plain.dataUsingEncoding(NSASCIIStringEncoding))
-        if cipher.length != plain.length {
+        let cipher = des.encrypt(plainText.dataUsingEncoding(NSASCIIStringEncoding))
+        if cipher.length < plainText.length  {
             failCount++
             continue
         }
         
         // decrypt
         let decrypted = des.decrypt(cipher)
-        if decrypted.length != cipher.length {
+        if decrypted.length != plainText.length {
             failCount++
             continue
         }
@@ -155,7 +158,7 @@ func DesTest(nTimes:Int) {
         decryptedText = NSString(data: decrypted, encoding: NSASCIIStringEncoding)
         
         // compare decrypted text and plain text
-        if decryptedText == plain {
+        if decryptedText == plainText {
             successCount++
         }else{
             print("!")
