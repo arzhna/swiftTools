@@ -219,7 +219,7 @@ void test_rsa(void){
     int encrypted_length;
     int decrypted_length;
      
-    encrypted_length = rsa_public_encrypt(plainText,(int)(strlen((const char*)plainText)),publicKey,encrypted);
+    encrypted_length = rsa_public_encrypt(publicKey, plainText, (int)(strlen((const char*)plainText)), encrypted);
     if(encrypted_length == -1)
     {
         printLastError("Public Encrypt failed ");
@@ -227,7 +227,7 @@ void test_rsa(void){
     }
     printf("Encrypted length =%d\n",encrypted_length);
      
-    decrypted_length = rsa_private_decrypt(encrypted,encrypted_length,privateKey, decrypted);
+    decrypted_length = rsa_private_decrypt(privateKey, encrypted, encrypted_length, decrypted);
     if(decrypted_length == -1)
     {
         printLastError("Private Decrypt failed ");
@@ -236,7 +236,7 @@ void test_rsa(void){
     printf("Decrypted Text =%s\n",decrypted);
     printf("Decrypted Length =%d\n",decrypted_length);
     
-    encrypted_length= rsa_private_encrypt(plainText,(int)(strlen((const char*)plainText)),privateKey,encrypted);
+    encrypted_length= rsa_private_encrypt(privateKey, plainText, (int)(strlen((const char*)plainText)), encrypted);
     if(encrypted_length == -1)
     {
         printLastError("Private Encrypt failed");
@@ -244,7 +244,7 @@ void test_rsa(void){
     }
     printf("Encrypted length =%d\n",encrypted_length);
      
-    decrypted_length = rsa_public_decrypt(encrypted,encrypted_length,publicKey, decrypted);
+    decrypted_length = rsa_public_decrypt(publicKey, encrypted, encrypted_length, decrypted);
     if(decrypted_length == -1)
     {
         printLastError("Public Decrypt failed");
@@ -256,21 +256,31 @@ void test_rsa(void){
 
 void test_des(void)
 {
-    unsigned char key[]="password";
-    unsigned char clear[]="This is a secret message";
+    unsigned char key1[]="password";
+    unsigned char key2[]="abcdefgh";
+    unsigned char key3[]="arzhnaks";
+    unsigned char iv[]="0";
+    
+    unsigned char clear[] = "This is a secret message. I'm Arzhna Lee. I'm listening a song that is Chloe of Grouplove.";
+
     unsigned char *decrypted;
     unsigned char *encrypted;
+    int i;
+    int ntimes = 1;
     
     encrypted=(unsigned char*)malloc(sizeof(clear));
     decrypted=(unsigned char*)malloc(sizeof(clear));
-    memset(encrypted, 0, sizeof(clear));
-    memset(decrypted, 0, sizeof(clear));
     
-    printf("Clear text\t : %s \n",clear);
-    des_encrypt(key, clear, sizeof(clear), encrypted);
-    printf("Encrypted text\t : %s \n",encrypted);
-    des_decrypt(key, encrypted, sizeof(clear), decrypted);
-    printf("Decrypted text\t : %s \n",decrypted);
+    for(i=0;i<ntimes; i++){
+        memset(encrypted, 0, sizeof(clear));
+        memset(decrypted, 0, sizeof(clear));
+        
+        printf("\nClear text\t : %s \n",clear);
+        des_encrypt(key1, key2, key3, iv, clear, sizeof(clear), encrypted);
+        //printf("Encrypted text\t : %s \n",encrypted);
+        des_decrypt(key1, key2, key3, iv, encrypted, sizeof(clear), decrypted);
+        printf("Decrypted text\t : %s \n",decrypted);
+    }
     
     free(encrypted);
     free(decrypted);
