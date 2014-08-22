@@ -1,22 +1,22 @@
 //
 //  crypto.c
-//  xmlParserTest
 //
 //  Created by  Arzhna on 2014. 7. 31.
 //
 
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
+#include <stdio.h>
+#include <string.h>
 #include <openssl/pem.h>
 #include <openssl/ssl.h>
 #include <openssl/rsa.h>
 #include <openssl/evp.h>
 #include <openssl/bio.h>
 #include <openssl/err.h>
-#include <stdio.h>
-#include <time.h>
-#include <string.h>
 #include <openssl/des.h>
+#include <openssl/aes.h>
+#include <openssl/sha.h>
 
 #include "crypto.h"
 
@@ -155,7 +155,7 @@ DES_key_schedule getDesKeySchedule(unsigned char* key)
     return schedule;
 }
 
-void des_encrypt(unsigned char *key1, unsigned char *key2, unsigned char *key3, unsigned char* iv, unsigned char *msg, int size, unsigned char *encrypted)
+void des_encrypt(unsigned char *key1, unsigned char *key2, unsigned char *key3, unsigned char* iv, unsigned char *msg, unsigned int data_len, unsigned char *encrypted)
 {
     DES_key_schedule schedule1;
     DES_key_schedule schedule2;
@@ -167,10 +167,10 @@ void des_encrypt(unsigned char *key1, unsigned char *key2, unsigned char *key3, 
     schedule3 = getDesKeySchedule(key3);
     
     /* Encryption occurs here */
-    DES_ede3_cbc_encrypt(msg, encrypted, size, &schedule1, &schedule2, &schedule3, (DES_cblock*)&iv, DES_ENCRYPT);
+    DES_ede3_cbc_encrypt(msg, encrypted, data_len, &schedule1, &schedule2, &schedule3, (DES_cblock*)&iv, DES_ENCRYPT);
 }
 
-void des_decrypt(unsigned char *key1, unsigned char *key2, unsigned char *key3, unsigned char* iv, unsigned char *msg, int size, unsigned char *decrypted)
+void des_decrypt(unsigned char *key1, unsigned char *key2, unsigned char *key3, unsigned char* iv, unsigned char *msg, unsigned int data_len, unsigned char *decrypted)
 {
     DES_key_schedule schedule1;
     DES_key_schedule schedule2;
@@ -182,8 +182,66 @@ void des_decrypt(unsigned char *key1, unsigned char *key2, unsigned char *key3, 
     schedule3 = getDesKeySchedule(key3);
     
     /* Decryption occurs here */
-    DES_ede3_cbc_encrypt(msg, decrypted, size, &schedule1, &schedule2, &schedule3, (DES_cblock*)&iv, DES_DECRYPT);
+    DES_ede3_cbc_encrypt(msg, decrypted, data_len, &schedule1, &schedule2, &schedule3, (DES_cblock*)&iv, DES_DECRYPT);
 }
+
+
+/*********************
+ *
+ *  AES functions (AES-CBC)
+ *
+ *********************/
+
+#define AES_KEY_LENGTH  256
+
+void aes_encrypt(unsigned char *key, unsigned char *iv, unsigned char *msg, unsigned int data_len, unsigned char *encrypted)
+{
+    AES_KEY enc_key;
+    
+    AES_set_encrypt_key(key, AES_KEY_LENGTH, &enc_key);
+    
+    AES_cbc_encrypt(msg, encrypted, data_len, &enc_key, iv, AES_ENCRYPT);
+}
+
+void aes_decrypt(unsigned char *key, unsigned char *iv, unsigned char *msg, unsigned int data_len, unsigned char *decrypted)
+{
+    AES_KEY dec_key;
+    
+    AES_set_decrypt_key(key, AES_KEY_LENGTH, &dec_key);
+    
+    AES_cbc_encrypt(msg, decrypted, data_len, &dec_key, iv, AES_DECRYPT);
+}
+
+/*********************
+ *
+ *  HASH functions
+ *
+ *********************/
+
+void sha256(unsigned char *msg, unsigned char *hashed)
+{
+    int i = 0;
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+    
+    SHA256_CTX sha256;
+    SHA256_Init(&sha256);
+    SHA256_Update(&sha256, msg, strlen((const char*)msg));
+    SHA256_Final(hash, &sha256);
+    
+    for(i = 0; i < SHA256_DIGEST_LENGTH; i++)
+    {
+        sprintf((char*)(hashed + (i * 2)), "%02x", hash[i]);
+    }
+    
+    hashed[64] = 0;
+}
+
+
+/*********************
+ *
+ *  TEST functions
+ *
+ *********************/
 
 #if TEST_FUCNTION_ENABLE
 void test_rsa(void){
@@ -284,5 +342,51 @@ void test_des(void)
     
     free(encrypted);
     free(decrypted);
+}
+
+void test_aes(void)
+{
+    static unsigned char aes_key[] = {
+        0x83, 0xFE, 0xA5, 0xAD, 0x6D, 0xC9, 0x97, 0x94,
+        0x56, 0x83, 0x64, 0xB7, 0x52, 0x3A, 0x71, 0x6A,
+        0xA9, 0x38, 0xE3, 0xCA, 0xB2, 0x62, 0x1F, 0x2F,
+        0x45, 0x3D, 0x19, 0x8C, 0x02, 0x90, 0xB2, 0x76
+    };
+    
+    static unsigned char iv[] = {
+        0x24, 0x46, 0x35, 0x5D, 0x75, 0xA9, 0xF2, 0x84,
+        0x0C, 0x51, 0x6D, 0x1F, 0xCD, 0xFF, 0xEF, 0x63
+    };
+
+    unsigned char aes_input[] = "This is a secret message. I'm Arzhna Lee. I'm listening a song that is Chloe of Grouplove.";
+    
+    unsigned int inputslength = sizeof(aes_input);
+    
+    // buffers for encryption and decryption
+    const unsigned int encslength = ((inputslength + AES_BLOCK_SIZE) / AES_BLOCK_SIZE) * AES_BLOCK_SIZE;
+    
+    //const size_t encslength = ((inputslength + AES_BLOCK_SIZE) / AES_BLOCK_SIZE) * AES_BLOCK_SIZE;
+    unsigned char enc_out[encslength];
+    unsigned char dec_out[inputslength];
+    
+    memset(enc_out, 0, sizeof(enc_out));
+    memset(dec_out, 0, sizeof(dec_out));
+    
+    unsigned char iv_dec[AES_BLOCK_SIZE], iv_enc[AES_BLOCK_SIZE];
+    
+    memcpy(iv_enc, iv, AES_BLOCK_SIZE);
+    memcpy(iv_dec, iv, AES_BLOCK_SIZE);
+    
+    // so i can do with this aes-cbc-128 aes-cbc-192 aes-cbc-256
+    aes_encrypt(aes_key, iv_enc, aes_input, inputslength, enc_out);
+    aes_decrypt(aes_key, iv_dec, enc_out, encslength, dec_out);
+
+    
+    printf("original:\t");
+    printf("%s\n", aes_input);
+    
+    
+    printf("decrypt:\t");
+    printf("%s\n", dec_out);
 }
 #endif
