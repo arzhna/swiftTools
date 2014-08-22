@@ -7,9 +7,6 @@
 
 import Foundation
 
-let sizeOfCipher    = 128
-let maxSizeOfPlain  = 64*1024
-
 enum RSAKeyType {
     case PublicKey
     case PrivateKey
@@ -18,6 +15,10 @@ enum RSAKeyType {
 class AolRSA {
     var publicKey: NSData
     var privateKey: NSData
+    
+    //private members
+    let sizeOfCipher    = 128
+    let maxSizeOfPlain  = 64*1024
     
     init() {
         self.publicKey = NSData()
