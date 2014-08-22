@@ -7,14 +7,14 @@
 
 import Foundation
 
-enum AolSymmCryptoAlogrithmType {
+enum AolSymCryptoType {
     case DES
     case AES
 }
 
 class AolSymCrypto {
     
-    let algorithmType: AolSymmCryptoAlogrithmType
+    let algorithmType: AolSymCryptoType
     let keyNumbers: Int
     let keyLength: Int
     let initVectorLength: Int
@@ -23,7 +23,7 @@ class AolSymCrypto {
     var key: [NSData]
     var iVec: NSData
     
-    init(type: AolSymmCryptoAlogrithmType) {
+    init(type: AolSymCryptoType) {
         self.algorithmType = type
         
         switch self.algorithmType {
@@ -126,6 +126,7 @@ class AolSymCrypto {
         return reducedData
     }
     
+    // override this functions
     func encrypt(plain: NSData)->NSData {
         return NSData()
     }
