@@ -7,7 +7,7 @@
 
 import Foundation
 
-var plainText: NSString = "This is a secret message. I'm Arzhna Lee. I'm listening a song that is Battery of Metallica."
+let plainText: NSString = "This is a secret message. I'm Arzhna Lee. I'm listening a song that is Battery of Metallica."
 let resourcePath = "usr/share/man/man1/Resources"
 
 func RsaTest(nTimes: Int){
@@ -19,13 +19,11 @@ func RsaTest(nTimes: Int){
     var path: NSString
     var bundle = NSBundle.mainBundle()
     
-    println("\(bundle)")
-    
     // load keys
-    path = bundle.pathForResource("pubkey", ofType: "data", inDirectory: resourcePath)
+    path = bundle.pathForResource("pubkey", ofType: "data", inDirectory: resourcePath)!
     let publicKey = NSData(contentsOfFile: path)
     
-    path = bundle.pathForResource("privkey", ofType: "data", inDirectory: resourcePath)
+    path = bundle.pathForResource("privkey", ofType: "data", inDirectory: resourcePath)!
     let privateKey = NSData(contentsOfFile: path)
     
     // generate AolRSA Instance
@@ -45,7 +43,7 @@ func RsaTest(nTimes: Int){
     //start test
     for i in 0..<nTimes {
         // encrypt
-        encryptedData = rsa.encrypt(plainText.dataUsingEncoding(NSASCIIStringEncoding), usingKey: .PublicKey)
+        encryptedData = rsa.encrypt(plainText.dataUsingEncoding(NSASCIIStringEncoding)!, usingKey: .PublicKey)
         if encryptedData.length != 128 {
             failCount++
             continue
@@ -87,7 +85,7 @@ func RsaTest(nTimes: Int){
     //start test
     for i in 0..<nTimes {
         // encrypt
-        encryptedData = rsa.encrypt(plainText.dataUsingEncoding(NSASCIIStringEncoding), usingKey: .PrivateKey)
+        encryptedData = rsa.encrypt(plainText.dataUsingEncoding(NSASCIIStringEncoding)!, usingKey: .PrivateKey)
         if encryptedData.length != 128 {
             failCount++
             continue
@@ -141,7 +139,7 @@ func DesTest(nTimes: Int) {
         des.generateInitVector()
 
         // encrypt
-        let cipher = des.encrypt(plainText.dataUsingEncoding(NSASCIIStringEncoding))
+        let cipher = des.encrypt(plainText.dataUsingEncoding(NSASCIIStringEncoding)!)
         if cipher.length < plainText.length  {
             failCount++
             continue
@@ -172,5 +170,69 @@ func DesTest(nTimes: Int) {
     
     // print result
     println("\n\(successCount) times success!! \(failCount) times fail!!")
-    println("Decrypted Text : \(decryptedText)")
+    println("Decrypted Text : \(decryptedText)\n\n")
+}
+
+func AesTest(nTimes: Int) {
+    
+    var decryptedText = ""
+    
+    println("== AES Test ==")
+    println("Plain Text : \(plainText)")
+    
+    // generate AolDES Instance
+    let aes = AolAES()
+    
+    // initialize counters
+    var successCount = 0
+    var failCount = 0
+    
+    // test start
+    for i in 0..<nTimes {
+        // generate new initial vector
+        aes.generateInitVector()
+        
+        // encrypt
+        let cipher = aes.encrypt(plainText.dataUsingEncoding(NSASCIIStringEncoding)!)
+        if cipher.length < plainText.length  {
+            println("cipher length = \(cipher.length)")
+            failCount++
+            continue
+        }
+        
+        // decrypt
+        let decrypted = aes.decrypt(cipher)
+        if decrypted.length != plainText.length {
+            println("decrypted length = \(decrypted.length), plainText length = \(plainText.length)")
+            failCount++
+            continue
+        }
+        
+        // convert decrypted data to NSString type
+        decryptedText = NSString(data: decrypted, encoding: NSASCIIStringEncoding)
+        
+        // compare decrypted text and plain text
+        if decryptedText == plainText {
+            successCount++
+        }else{
+            print("!")
+            failCount++
+        }
+        
+        if i%100==0 {
+            print(".")
+        }
+    }
+    
+    // print result
+    println("\n\(successCount) times success!! \(failCount) times fail!!")
+    println("Decrypted Text : \(decryptedText)\n\n")
+}
+
+func ShaTest() {
+    var orgText = "sha hash function test"
+    println("Original Text : \(orgText)")
+    
+    var hashedData = AolHash.hashUsingSha256(orgText.dataUsingEncoding(NSASCIIStringEncoding)!)
+    println("Hashed Text : \(NSString(data: hashedData, encoding: NSASCIIStringEncoding))")
 }
